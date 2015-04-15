@@ -1,3 +1,4 @@
+local fiber = require 'fiber'
 local triggers = {}
 
 local last_log_time = 0
@@ -13,23 +14,24 @@ end
 
 local function log(m, force)
     if force == nil or not force then
-        if box.time() - last_log_time < log_min_delay then
+        if fiber.time() - last_log_time < log_min_delay then
             return
         end
     end
-    last_log_time = box.time()
+    last_log_time = fiber.time()
     print(e)
 end
 
 
 local function watcher()
-    box.fiber.name("on_lsn")
+    local ifiber = fiber.self()
+    ifiber:name("on_lsn")
     print('Start fiber')
 
     while true do
         box.fiber.sleep(watch_period)
-        if box.info.lsn ~= last_lsn then
-            last_lsn = box.info.lsn
+        if box.info.server.lsn ~= last_lsn then
+            last_lsn = box.info.server.lsn
 
             for i, cb in pairs(triggers) do
 
@@ -43,6 +45,6 @@ local function watcher()
 end
 
 
-box.fiber.wrap(watcher)
+fiber.create(watcher)
 
 return { on_change_lsn = box.on_change_lsn }
