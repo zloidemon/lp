@@ -1,4 +1,5 @@
 require 'on_lsn'
+local pickle = require 'pickle'
 return {
     new = function(space, expire_timeout)
         -- constants
@@ -30,7 +31,7 @@ return {
             if max == nil then
                 return _last_id
             end
-            _last_id = box.unpack('l', max[ID])
+            _last_id = pickle.unpack('l', max[ID])
             return _last_id
         end
 
@@ -57,7 +58,7 @@ return {
 
         local function _take(id, keys)
 
-            id = box.pack('l', id)
+            id = pickle.pack('l', id)
             local res = {}
 
             for i, key in pairs(keys) do
@@ -68,7 +69,7 @@ return {
                     if tuple[KEY] ~= key then
                         break
                     end
-                    table.insert(res, { box.unpack('l', tuple[ID]), tuple })
+                    table.insert(res, { pickle.unpack('l', tuple[ID]), tuple })
                 end
             end
             table.sort(res, function(a, b) return a[1] < b[1] end)
@@ -89,10 +90,10 @@ return {
             local count = 0
             while true do
                 local iter = box.space[space].index[0]
-                                :iterator(box.index.GE, box.pack('l', 0))
+                                :iterator(box.index.GE, pickle.pack('l', 0))
                 local lst = {}
                 for tuple in iter do
-                    if box.unpack('i', tuple[TIME]) + expire_timeout > now then
+                    if pickle.unpack('i', tuple[TIME]) + expire_timeout > now then
                         break
                     end
                     table.insert(lst, tuple[ID])
@@ -135,7 +136,7 @@ return {
             local tuple
             while last_checked_id < last_id() do
                 last_checked_id = last_checked_id + tonumber64(1)
-                tuple = box.select(space, 0, box.pack('l', last_checked_id))
+                tuple = box.select(space, 0, pickle.pack('l', last_checked_id))
                 if tuple ~= nil then
                     wakeup_waiters(tuple[KEY])
                 end
@@ -146,14 +147,14 @@ return {
 
         local function put_task(key, data)
 
-            local time = box.pack('i', math.floor(box.time()))
+            local time = pickle.pack('i', math.floor(box.time()))
 
             local task
             if data ~= nil then
                 task = box.insert(space,
-                    box.pack('l', last_id() + 1), time, key, data)
+                    pickle.pack('l', last_id() + 1), time, key, data)
             else
-                task = box.insert(space, box.pack('l', last_id() + 1), time, key)
+                task = box.insert(space, pickle.pack('l', last_id() + 1), time, key)
             end
 
             return task
@@ -177,7 +178,7 @@ return {
                 put_task(key, data)
             end
 
-            return box.pack('l', count)
+            return pickle.pack('l', count)
         end
 
         -- subscribe tasks
@@ -196,7 +197,7 @@ return {
             if #events > 0 then
                 table.insert(
                     events,
-                    box.tuple.new{ box.pack('l', last_id() + tonumber64(1)) }
+                    box.tuple.new{ pickle.pack('l', last_id() + tonumber64(1)) }
                 )
                 return events
             end
@@ -253,7 +254,7 @@ return {
             end
 
             -- last tuple always contains time
-            table.insert(events, box.tuple.new{ box.pack('l', id) })
+            table.insert(events, box.tuple.new{ pickle.pack('l', id) })
             return events
         end
 
@@ -305,7 +306,7 @@ return {
                         local now = math.floor( box.time() )
                         if min ~= nil then
                             local et =
-                                box.unpack('i', min[TIME]) + expire_timeout
+                                pickle.unpack('i', min[TIME]) + expire_timeout
                             if et <= now then
                                 cleanup_space()
                             end
@@ -318,7 +319,7 @@ return {
 
         local max = box.space[space].index[0]:max()
         if max ~= nil then
-            last_checked_id = box.unpack('l', max[ID])
+            last_checked_id = pickle.unpack('l', max[ID])
             max = nil
         end
 
