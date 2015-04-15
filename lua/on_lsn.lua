@@ -29,7 +29,7 @@ local function watcher()
     print('Start fiber')
 
     while true do
-        box.fiber.sleep(watch_period)
+        fiber.sleep(watch_period)
         if box.info.server.lsn ~= last_lsn then
             last_lsn = box.info.server.lsn
 

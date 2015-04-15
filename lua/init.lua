@@ -29,7 +29,7 @@ return {
         local last_checked_id = tonumber64(0)
 
         last_id = function()
-            local max = box.space[space].index[0]:max()
+            local max = box.space[space].index['id']:max()
             if max == nil then
                 return _last_id
             end
@@ -64,7 +64,7 @@ return {
             local res = {}
 
             for i, key in pairs(keys) do
-                local iter = box.space[space].index[1]
+                local iter = box.space[space].index['id']
                     :iterator(box.index.GE, key, id)
 
                 for tuple in iter do
@@ -91,7 +91,7 @@ return {
             local now = fiber.time()
             local count = 0
             while true do
-                local iter = box.space[space].index[0]
+                local iter = box.space[space].index['id']
                                 :iterator(box.index.GE, pickle.pack('l', 0))
                 local lst = {}
                 for tuple in iter do
@@ -299,12 +299,13 @@ return {
         -- cleanup process
         fiber.create(
             function()
-                box.fiber.name('expired')
+                local ifiber = fiber.self()
+                ifiber:name('expired')
                 printf("Start cleanup fiber for space %s (period %d sec): %s",
                     space, expire_timeout, box.info.status)
                 while true do
                     if box.info.status == 'primary' then
-                        local min = box.space[space].index[0]:min()
+                        local min = box.space[space].index['id']:min()
                         local now = math.floor( fiber.time() )
                         if min ~= nil then
                             local et =
@@ -319,7 +320,7 @@ return {
             end
         )
 
-        local max = box.space[space].index[0]:max()
+        local max = box.space[space].index['id']:max()
         if max ~= nil then
             last_checked_id = pickle.unpack('l', max[ID])
             max = nil
