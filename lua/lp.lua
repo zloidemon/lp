@@ -1,5 +1,7 @@
 require 'on_lsn'
 local pickle = require 'pickle'
+local fiber  = require 'fiber'
+
 return {
     new = function(space, expire_timeout)
         -- constants
@@ -37,11 +39,11 @@ return {
 
         local function channel()
             if #pool_chs < 1024 then
-                return box.ipc.channel(1)
+                return fiber.channel(1)
             end
             local ch = table.remove(pool_chs, 1)
             if ch == nil then
-                ch = box.ipc.channel(1)
+                ch = fiber.channel(1)
             end
             return ch
         end
