@@ -88,7 +88,7 @@ return {
         -- cleanup space iteration
         local function cleanup_space()
 
-            local now = box.time()
+            local now = fiber.time()
             local count = 0
             while true do
                 local iter = box.space[space].index[0]
@@ -149,7 +149,7 @@ return {
 
         local function put_task(key, data)
 
-            local time = pickle.pack('i', math.floor(box.time()))
+            local time = pickle.pack('i', math.floor(fiber.time()))
 
             local task
             if data ~= nil then
@@ -209,7 +209,7 @@ return {
             local fid = box.fiber.self():id()
 
             while timeout > 0 do
-                started = box.time()
+                started = fiber.time()
 
                 -- set waiter fid
                 for i, key in pairs(keys) do
@@ -243,7 +243,7 @@ return {
                 end
 
 
-                timeout = timeout - (box.time() - started)
+                timeout = timeout - (fiber.time() - started)
 
                 events = _take(id, keys)
                 if #events > 0 then
@@ -305,7 +305,7 @@ return {
                 while true do
                     if box.info.status == 'primary' then
                         local min = box.space[space].index[0]:min()
-                        local now = math.floor( box.time() )
+                        local now = math.floor( fiber.time() )
                         if min ~= nil then
                             local et =
                                 pickle.unpack('i', min[TIME]) + expire_timeout
