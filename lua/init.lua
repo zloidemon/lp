@@ -1,4 +1,4 @@
-require 'on_lsn'
+require 'lp.on_lsn'
 local pickle = require 'pickle'
 local fiber  = require 'fiber'
 
