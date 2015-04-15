@@ -206,7 +206,7 @@ return {
 
             timeout = tonumber(timeout)
             local started
-            local fid = box.fiber.self():id()
+            local fid = fiber.self():id()
 
             while timeout > 0 do
                 started = fiber.time()
@@ -297,7 +297,7 @@ return {
 
 
         -- cleanup process
-        box.fiber.wrap(
+        fiber.create(
             function()
                 box.fiber.name('expired')
                 printf("Start cleanup fiber for space %s (period %d sec): %s",
@@ -314,7 +314,7 @@ return {
                             end
                         end
                     end
-                    box.fiber.sleep(expire_timeout / 10)
+                    fiber.sleep(expire_timeout / 10)
                 end
             end
         )
