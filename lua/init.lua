@@ -61,12 +61,9 @@ return {
         local function _take(id, keys)
 
             local res = {}
-
             for i, key in pairs(keys) do
-                local iter = box.space[space].index['did']
-                    :pairs({key, id}, {iterator = box.index.GE})
-
-                for tuple in pairs(iter) do
+                for _, tuple in box.space[space].index['did']
+                    :pairs({key, id}, {iterator = box.index.GE}) do
                     if tuple[KEY] ~= key then
                         break
                     end
@@ -90,10 +87,9 @@ return {
             local now = fiber.time()
             local count = 0
             while true do
-                local iter = box.space[space].index['id']
-                    :pairs(0, {iterator = box.index.GE})
                 local lst = {}
-                for tuple in iter do
+                for _, tuple in box.space[space].index['id']
+                    :pairs(0, {iterator = box.index.GE}) do
                     if pickle.unpack('i', tuple[TIME]) + expire_timeout > now then
                         break
                     end
