@@ -5,10 +5,10 @@ local fiber  = require 'fiber'
 return {
     new = function(space, expire_timeout)
         -- constants
-        local ID                = 0
-        local TIME              = 1
-        local KEY               = 2
-        local DATA              = 3
+        local ID                = 1
+        local TIME              = 2
+        local KEY               = 3
+        local DATA              = 4
         local EXPIRE_TIMEOUT    = 1800
 
         space = tonumber(space)
@@ -33,7 +33,7 @@ return {
             if max == nil then
                 return _last_id
             end
-            _last_id = pickle.unpack('l', max[ID])
+            _last_id = max[ID]
             return _last_id
         end
 
@@ -60,18 +60,17 @@ return {
 
         local function _take(id, keys)
 
-            id = pickle.pack('l', id)
             local res = {}
 
             for i, key in pairs(keys) do
-                local iter = box.space[space].index['id']
-                    :iterator(box.index.GE, key, id)
+                local iter = box.space[space].index['did']
+                    :pairs({key, id}, {iterator = box.index.GE})
 
-                for tuple in iter do
+                for tuple in pairs(iter) do
                     if tuple[KEY] ~= key then
                         break
                     end
-                    table.insert(res, { pickle.unpack('l', tuple[ID]), tuple })
+                    table.insert(res, { tuple[ID], tuple })
                 end
             end
             table.sort(res, function(a, b) return a[1] < b[1] end)
@@ -92,7 +91,7 @@ return {
             local count = 0
             while true do
                 local iter = box.space[space].index['id']
-                                :iterator(box.index.GE, pickle.pack('l', 0))
+                    :pairs(0, {iterator = box.index.GE})
                 local lst = {}
                 for tuple in iter do
                     if pickle.unpack('i', tuple[TIME]) + expire_timeout > now then
@@ -153,10 +152,9 @@ return {
 
             local task
             if data ~= nil then
-                task = box.space[space]:insert{
-                    pickle.pack('l', last_id() + 1), time, key, data}
+                task = box.space[space]:insert{last_id() + 1, time, key, data}
             else
-                task = box.space[space]:insert{pickle.pack('l', last_id() + 1), time, key}
+                task = box.space[space]:insert{last_id() + 1, time, key}
             end
 
             return task
@@ -199,7 +197,7 @@ return {
             if #events > 0 then
                 table.insert(
                     events,
-                    box.tuple.new{ pickle.pack('l', last_id() + tonumber64(1)) }
+                    box.tuple.new{ last_id() + 1 }
                 )
                 return events
             end
@@ -256,7 +254,7 @@ return {
             end
 
             -- last tuple always contains time
-            table.insert(events, box.tuple.new{ pickle.pack('l', id) })
+            table.insert(events, box.tuple.new{ id })
             return events
         end
 
@@ -322,7 +320,7 @@ return {
 
         local max = box.space[space].index['id']:max()
         if max ~= nil then
-            last_checked_id = pickle.unpack('l', max[ID])
+            last_checked_id = max[ID]
             max = nil
         end
 
