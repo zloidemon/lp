@@ -1,6 +1,5 @@
 require 'lp.on_lsn'
-local pickle = require 'pickle'
-local fiber  = require 'fiber'
+local fiber = require 'fiber'
 
 return {
     new = function(space, expire_timeout)
@@ -90,7 +89,7 @@ return {
                 local lst = {}
                 for _, tuple in box.space[space].index['id']
                     :pairs(0, {iterator = box.index.GE}) do
-                    if pickle.unpack('i', tuple[TIME]) + expire_timeout > now then
+                    if (tuple[TIME] + expire_timeout) > now then
                         break
                     end
                     table.insert(lst, tuple[ID])
@@ -133,7 +132,7 @@ return {
             local tuple
             while last_checked_id < last_id() do
                 last_checked_id = last_checked_id + tonumber64(1)
-                tuple = box.space[space]:select{0, pickle.pack('l', last_checked_id)}
+                tuple = box.space[space]:select{0, last_checked_id}
                 if tuple ~= nil then
                     wakeup_waiters(tuple[KEY])
                 end
@@ -144,7 +143,7 @@ return {
 
         local function put_task(key, data)
 
-            local time = pickle.pack('i', math.floor(fiber.time()))
+            local time = fiber.time()
 
             local task
             if data ~= nil then
@@ -174,7 +173,7 @@ return {
                 put_task(key, data)
             end
 
-            return pickle.pack('l', count)
+            return count
         end
 
         -- subscribe tasks
@@ -302,8 +301,7 @@ return {
                         local min = box.space[space].index['id']:min()
                         local now = math.floor( fiber.time() )
                         if min ~= nil then
-                            local et =
-                                pickle.unpack('i', min[TIME]) + expire_timeout
+                            local et = min[TIME] + expire_timeout
                             if et <= now then
                                 cleanup_space()
                             end

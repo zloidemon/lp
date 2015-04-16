@@ -19,7 +19,7 @@ local function log(m, force)
         end
     end
     last_log_time = fiber.time()
-    print(e)
+    print(m)
 end
 
 
@@ -34,7 +34,6 @@ local function watcher()
             last_lsn = box.info.server.lsn
 
             for i, cb in pairs(triggers) do
-
                 local s, e = pcall(cb, last_lsn)
                 if not s then
                     log(e)
