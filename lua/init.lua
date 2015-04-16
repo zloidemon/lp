@@ -132,7 +132,7 @@ return {
             local tuple
             while last_checked_id < last_id() do
                 last_checked_id = last_checked_id + tonumber64(1)
-                tuple = box.space[space]:select{0, last_checked_id}
+                tuple = box.space[space]:get{last_checked_id}
                 if tuple ~= nil then
                     wakeup_waiters(tuple[KEY])
                 end
